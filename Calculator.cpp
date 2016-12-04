@@ -3,10 +3,12 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <cmath>
+#include <vector>
 #include "Zedboard.h"
 using namespace std;
 
 int Run(Zedboard z, int states[]);
+int CalcTotal(vector<int> inputs, vector<int> operations);
 
 int main()
 {
@@ -27,6 +29,15 @@ int main()
 	char response = 'y';
 	while (response == 'y')
 	{
+
+		// Initial state of pushbuttons set to 0
+		for (int i = 0; i < 5; i++)
+		{
+			states[i] = 0;
+		}
+		// Initialize LEDs to 0
+		z.SetLedNumber(0);
+
 		// Run application once
 		total = Run(z, states);
 		z.SetLedNumber(total);
@@ -36,20 +47,14 @@ int main()
 	}
 }
 
-
+//run calculator
 int Run(Zedboard z, int states[])
 {
 	int switch_value = 0;
 	int button = 0;
-
-	// Initial state of pushbuttons set to 0
-	for (int i = 0; i < 5; i++)
-	{
-		states[i] = 0;
-	}
-	// Initialize LEDs to 0
-	z.SetLedNumber(0);
-
+	int total;
+	vector<int> inputs; //vector to store input numbers
+	vector<int> operations; //vector to store operations
 
 	while (true)
 	{
@@ -68,30 +73,66 @@ int Run(Zedboard z, int states[])
 			switch_value += z.RegisterRead(gpio_sw7_offset) * pow(2,6);
 			switch_value += z.RegisterRead(gpio_sw8_offset) * pow(2,7);
 
-			//perform operation
-			switch(button)
+			if (button == 5) //center pressed
 			{
-				case 1: //left button -> addition
-					cout << switch_value << "\n+ ";
-					return switch_value + Run(z, states);
-					break;
-				case 2: //right button -> subtraction
-					cout << switch_value << "\n- ";
-					return switch_value - Run(z, states);
-					break;
-				case 3: //up button -> multiplication
-					cout << switch_value << "\n* ";
-					return switch_value * Run(z, states);
-					break;
-				case 4: //down button -> division
-					cout << "/ " << switch_value << "\n/ ";
-					return switch_value / Run(z, states);
-					break;
-				case 5: // center button -> equals
-					cout << switch_value << endl << endl;
-					return switch_value;
-					break;
+				total = CalcTotal(inputs, operations);
+				cout << "\n= " << total << endl;
+				return total;
+			}
+			else //append value and operations,
+			{
+				inputs.push_back(switch_value);
+				operations.push_back(button);
+
+				//show calculations to user
+				switch(button)
+				{
+					case 1: //addition
+						cout << switch_value << "\n+ ";
+						break;
+					case 2: //subtraction
+						cout << switch_value << "\n- ";
+						break;
+					case 3: //multiplication
+						cout << switch_value << "\n* ";
+						break;
+					case 4: //division
+						cout << switch_value << "\n/ ";
+						break;
+				}
+				// reset input value
+				switch_value = 0;
 			}
 		}
 	}
+}
+
+// calculate
+int CalcTotal(vector<int> inputs, vector<int> operations)
+{
+	int total = inputs[0];
+	int length = inputs.size();
+	int button;
+
+	// perform operations
+	for (int i = 1; i < length; i++)
+	{
+		button = operations[i - 1];
+		switch(button)
+		{
+			case 1: //addition
+				total += inputs[i];
+				break;
+			case 2: //subtraction
+				total -= inputs[i];
+				break;
+			case 3: //multiplication
+				total *= inputs[i];
+				break;
+			case 4: //division
+				total /= inputs[i];
+				break;
+		}
+	}
+	return total;
 }
