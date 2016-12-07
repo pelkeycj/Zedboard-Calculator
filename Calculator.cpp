@@ -113,7 +113,7 @@ int Run(Zedboard z, int states[])
 	}
 }
 
-// calculate
+//applies operations to inputs to get final value
 int CalcTotal(vector<int> inputs, vector<int> operations)
 {
 	int total = inputs[0];
