@@ -30,10 +30,10 @@ int main()
 	while (response == 'y')
 	{
 
-		// Initial state of pushbuttons set to 0
+		// Initial state of pushbuttons
 		for (int i = 0; i < 5; i++)
 		{
-			states[i] = 0;
+			states[i] = z.RegisterRead(gpio_pbtnl_offset + 4*i);
 		}
 		// Initialize LEDs to 0
 		z.SetLedNumber(0);
@@ -53,28 +53,34 @@ int Run(Zedboard z, int states[])
 	int switch_value = 0;
 	int button = 0;
 	int total;
+	int toggle_value = 0;
 	vector<int> inputs; //vector to store input numbers
 	vector<int> operations; //vector to store operations
 
 	while (true)
 	{
-		// get pressed button
+		//set LEDs to display current switch value
+		for (int i = 0; i <= 7; i++)
+		{
+			value = z.RegisterRead(gpio_sw1_offset + 4*i);
+			z.RegisterWrite(gpio_led1_offset + 4*i, value);
+		}
+
+		//get pressed button
 		button = z.PushButtonGet(states);
 
 		if (button != 0)
 		{
 			// read switches
-			switch_value += z.RegisterRead(gpio_sw1_offset) * pow(2,0);
-			switch_value += z.RegisterRead(gpio_sw2_offset) * pow(2,1);
-			switch_value += z.RegisterRead(gpio_sw3_offset) * pow(2,2);
-			switch_value += z.RegisterRead(gpio_sw4_offset) * pow(2,3);
-			switch_value += z.RegisterRead(gpio_sw5_offset) * pow(2,4);
-			switch_value += z.RegisterRead(gpio_sw6_offset) * pow(2,5);
-			switch_value += z.RegisterRead(gpio_sw7_offset) * pow(2,6);
-			switch_value += z.RegisterRead(gpio_sw8_offset) * pow(2,7);
+			for (int i = 0; i < 8; i++)
+			{
+				switch_value += z.RegisterRead(gpio_sw1_offset + 4*i) * pow(2,i);
+			}
 
 			if (button == 5) //center pressed
 			{
+				inputs.push_back(switch_value);
+				cout << switch_value;
 				total = CalcTotal(inputs, operations);
 				cout << "\n= " << total << endl;
 				return total;
